@@ -9,12 +9,19 @@ using ImageUpload.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
+using ImageUpload.App_start;
+using ImageUpload.Utilies;
+using System.Net.Http.Headers;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Net;
 
 namespace ImageUpload.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly object _defaultFormOptions = 6000000000000;
+        private object _fileSizeLimit;
 
         public HomeController(ILogger<HomeController> logger)
         {
@@ -100,6 +107,98 @@ namespace ImageUpload.Controllers
             //Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
             //ViewData["message"] = $"{file.Length} bytes uploaded successfully!";
             return View("Index");
+        }*/
+
+        /*[HttpPost]
+        [DisableFormValueModelBinding]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadPhysical()
+        {
+            if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
+            {
+                ModelState.AddModelError("File",
+                    $"The request couldn't be processed (Error 1).");
+                // Log error
+
+                return BadRequest(ModelState);
+            }
+
+           
+            var boundary = MultipartRequestHelper.GetBoundary(
+                MediaTypeHeaderValue.Parse(Request.ContentType),
+                70);
+            var reader = new MultipartReader(boundary, HttpContext.Request.Body);
+            var section = await reader.ReadNextSectionAsync();
+
+            while (section != null)
+            {
+                var hasContentDispositionHeader =
+                    ContentDispositionHeaderValue.TryParse(
+                        section.ContentDisposition, out var contentDisposition);
+
+                if (hasContentDispositionHeader)
+                {
+                    // This check assumes that there's a file
+                    // present without form data. If form data
+                    // is present, this method immediately fails
+                    // and returns the model error.
+                    if (!MultipartRequestHelper
+                        .HasFileContentDisposition(contentDisposition))
+                    {
+                        ModelState.AddModelError("File",
+                            $"The request couldn't be processed (Error 2).");
+                        // Log error
+
+                        return BadRequest(ModelState);
+                    }
+                    else
+                    {
+                        // Don't trust the file name sent by the client. To display
+                        // the file name, HTML-encode the value.
+                        var trustedFileNameForDisplay = WebUtility.HtmlEncode(
+                                contentDisposition.FileName);
+                        var trustedFileNameForFileStorage = Path.GetRandomFileName();
+
+                        // **WARNING!**
+                        // In the following example, the file is saved without
+                        // scanning the file's contents. In most production
+                        // scenarios, an anti-virus/anti-malware scanner API
+                        // is used on the file before making the file available
+                        // for download or for use by other systems. 
+                        // For more information, see the topic that accompanies 
+                        // this sample.
+
+                        object FileHelpers = null;
+                        object _fileSizeLimit1 = _fileSizeLimit;
+                        var streamedFileContent = await FileHelpers.ProcessStreamedFile(
+                            section, contentDisposition, ModelState,
+                            _permittedExtensions, _fileSizeLimit1);
+
+                        if (!ModelState.IsValid)
+                        {
+                            return BadRequest(ModelState);
+                        }
+
+                        using (var targetStream = System.IO.File.Create(
+                            Path.Combine(_targetFilePath, trustedFileNameForFileStorage)))
+                        {
+                            await targetStream.WriteAsync(streamedFileContent);
+
+                            _logger.LogInformation(
+                                "Uploaded file '{TrustedFileNameForDisplay}' saved to " +
+                                "'{TargetFilePath}' as {TrustedFileNameForFileStorage}",
+                                trustedFileNameForDisplay, _targetFilePath,
+                                trustedFileNameForFileStorage);
+                        }
+                    }
+                }
+
+                // Drain any remaining section body that hasn't been consumed and
+                // read the headers for the next section.
+                section = await reader.ReadNextSectionAsync();
+            }
+
+            return Created(nameof(StreamingController), null);
         }*/
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
